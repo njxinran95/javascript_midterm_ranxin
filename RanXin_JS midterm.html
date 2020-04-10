@@ -1,0 +1,284 @@
+<html>
+  <head>
+    <!-- CSS Imports -->
+    <link rel="stylesheet" href="leaflet.css" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!--Left Panel-->
+    <div id="sidebar" style="position: absolute; left: 0px; width: 400px; top: 0; bottom: 0;">
+      <h1 id="title" style="font-size:25px; font-family:Chalkduster,fantasy;font-weight: 900;text-align:center"></h1>
+      <br>
+      <p id="description" style="font-size:17px; font-family:Marker Felt, fantasy;text-align:center; color:#bf5b17 "></p>
+      <br>
+      <br>
+      <p id="info" style="font-size:16px; font-family:Comic Sans MS, Comic Sans, cursive;text-align:center;"></p>
+      <button id="nextButton" style="position: absolute; left: 50px; width: 70px; height:40px;bottom: 20;font-size: 14px;border-radius: 12px;background-color: white; color: black; border: 2px solid #4CAF50;font-family:Chalkduster,fantasy">next</button>
+      <button id="previousButton" style="position: absolute; right: 50px; width: 80px; height:40px;bottom: 20;font-size: 14px;border-radius: 12px; background-color: white; color: black;border: 2px solid #4CAF50;font-family:Chalkduster,fantasy">previous</button>
+    </div>
+    <!-- Map -->
+    <div id="map" style="position: absolute; right: 0; left: 400px; top: 0; bottom: 0;"></div>
+
+    <script src="leaflet.js"></script>
+    <script src="underscore.js"></script>
+    <script src="jquery-2.2.0.js"></script>
+
+    <script>
+    // Map
+    var map = L.map('map', {
+      center: [37.773972, -122.431297],
+      zoom: 12
+    });
+    var Stamen_TonerLite = L.tileLayer('http://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.{ext}', {
+      attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      subdomains: 'abcd',
+      minZoom: 0,
+      maxZoom: 20,
+      ext: 'png'
+    }).addTo(map);
+
+    L.control.scale().addTo(map); //Add scale bar
+
+    // Data source
+    var dataset ="https://raw.githubusercontent.com/njxinran95/MUSA611-CPLN692-week7/master/assignment/Recreation%20and%20Parks%20Properties_SF.geojson";
+    var featureGroup;
+
+    // Create popup
+    var eachFeatureFunction = function(layer) {
+      layer.on('click', function(event) {
+          layer.bindPopup('<h1>'+layer.feature.properties.map_label+'</h1><p>Address: '+layer.feature.properties.address+'</p>'+'</h1><p>Acres: '+layer.feature.properties.acres+'</p>'+'</h1><p>Neighborhood: '+layer.feature.properties.mons_neighborhood+'</p>'+'</h1><p>Ownership: '+layer.feature.properties.ownership+'</p>');
+          console.log(layer.feature.properties.map_label);
+          console.log(layer.feature.properties.address);
+        //Find the bounds
+      bounds=event.target.getBounds();
+      map.fitBounds(bounds);
+    });
+    };
+
+    // Filter functions
+    var myFilter1 = function(feature) {
+      if(feature.properties.propertytype==='Mini Park'){
+        return true;
+      }else{return false;}
+    };
+
+    var myFilter2 = function(feature) {
+      if(feature.properties.propertytype==='Neighborhood Park or Playground'){
+        return true;
+      }else{return false;}
+    };
+
+    var myFilter3 = function(feature) {
+      if(feature.properties.propertytype==='Regional Park'){
+        return true;
+      }else{return false;}
+    };
+
+    var myFilter4 = function(feature) {
+      if(feature.properties.acres>=20){
+        return true;
+      }else{return false;}
+    };
+
+    //Style functions
+    var myStyle1 = function(feature) {
+        return{"fillColor": '#a6cee3', color: '#7570b3', weight: 2,fillOpacity: 1};}
+    var myStyle2 = function(feature) {
+        return{"fillColor": '#C0D0E7', color: '#8da0cb', weight: 2.5,fillOpacity: 1};}
+    var myStyle3 = function(feature) {
+        return{"fillColor": '#EACBD1', color: '#fb8072', weight: 2.5,fillOpacity: 1};}
+    var myStyle4 = function(feature) {
+        return{"fillColor": '#97AF8F', color: '#1b9e77', weight: 2.5,fillOpacity: 1};}
+
+
+
+      // Slide model:
+      var slides = [
+        { title: "Parks in San Francisco", description: "Click each park to zoom in and show the information", color: "#E8EFF9",info:"The project aims to present parks by different characteristics in San Francisco.The data is acquired from SF data portal. So far the dataset contains 236 parks in total."},
+        { title: "Mini Parks", description: "Click each park to zoom in and show the information", color: "#D3E1EE",info:"This page shows mini parks in SF. Currently there are 44 mini parks."},
+        { title: "Neighborhood Park or Playground", description: "Click each park to zoom in and show the information", color: "#C0D0E7",info:"This page shows 134 neighborhood parks or playgrounds."},
+        { title: "Regional Parks", description: "Click each park to zoom in and show the information", color: "#EACBD1",info:"This page shows 18 regional parks in San Francisco."},
+        { title: "Large Parks", description: "Click each park to zoom in and show the information", color: "#97AF8F",info:"This page shows parks that are at least 20 acres in area."}
+      ]
+
+      var loadSlide = function(slide) {
+        $('#title').text(slide.title)
+        $('#description').text(slide.description)
+        $('#sidebar').css("background-color", slide.color)
+        $('#info').text(slide.info)
+      }
+
+//load first slide
+loadSlide(slides[0])
+$('#previousButton').hide()
+$(document).ready(function() {
+$.ajax(dataset).done(function(data) {
+  var parsedData = JSON.parse(data);
+  featureGroup = L.geoJson(parsedData).addTo(map);
+  featureGroup.eachLayer(eachFeatureFunction);
+  });
+});
+
+
+var currentSlide=0;
+     // Next button function
+     var next = function() {
+       if (currentSlide == slides.length - 1) {
+       } else {
+         $('#nextButton').show()
+         $('#previousButton').show()
+         currentSlide = currentSlide + 1
+         loadSlide(slides[currentSlide])
+       }
+       if (currentSlide == slides.length - 1) {
+         $('#nextButton').hide()
+         $('#previousButton').show()
+       }
+      // Show different results
+       if (currentSlide == 0){
+         $(document).ready(function() {
+         $.ajax(dataset).done(function(data) {
+           var parsedData = JSON.parse(data);
+           map.removeLayer(featureGroup);
+           featureGroup = L.geoJson(parsedData).addTo(map);
+           featureGroup.eachLayer(eachFeatureFunction);
+           });
+         });
+       } else if (currentSlide==1){
+         $(document).ready(function() {
+         $.ajax(dataset).done(function(data) {
+           var parsedData = JSON.parse(data);
+           map.removeLayer(featureGroup);
+           featureGroup = L.geoJson(parsedData,{
+             filter: myFilter1,
+             style:myStyle1
+           }).addTo(map);
+           featureGroup.eachLayer(eachFeatureFunction);
+         });
+         });
+       }else if (currentSlide==2){
+         $(document).ready(function() {
+         $.ajax(dataset).done(function(data) {
+           var parsedData = JSON.parse(data);
+           map.removeLayer(featureGroup);
+           featureGroup = L.geoJson(parsedData,{
+             filter: myFilter2,
+             style:myStyle2
+           }).addTo(map);
+           featureGroup.eachLayer(eachFeatureFunction);
+         });
+         });
+       }else if (currentSlide==3){
+         $(document).ready(function() {
+         $.ajax(dataset).done(function(data) {
+           var parsedData = JSON.parse(data);
+           map.removeLayer(featureGroup);
+           featureGroup = L.geoJson(parsedData,{
+             filter: myFilter3,
+             style:myStyle3
+           }).addTo(map);
+           featureGroup.eachLayer(eachFeatureFunction);
+         });
+         });
+       }else if (currentSlide==4){
+         $(document).ready(function() {
+         $.ajax(dataset).done(function(data) {
+           var parsedData = JSON.parse(data);
+           map.removeLayer(featureGroup);
+           featureGroup = L.geoJson(parsedData,{
+             filter: myFilter4,
+             style:myStyle4
+           }).addTo(map);
+           featureGroup.eachLayer(eachFeatureFunction);
+         });
+         });
+       }
+     };
+
+     $('#nextButton').click(function(e) {
+       next()
+       console.log(currentSlide);
+     });
+
+      // Previous button Function
+      var previous = function() {
+        if (currentSlide == 0) {
+        } else {
+          $('#previousButton').show()
+          $('#nextButton').show()
+          currentSlide = currentSlide - 1
+          loadSlide(slides[currentSlide])
+        }
+        if (currentSlide == 0) {
+          $('#previousButton').hide()
+          $('#nextButton').show()
+        }
+      // Show different results
+        if (currentSlide == 0){
+          $(document).ready(function() {
+          $.ajax(dataset).done(function(data) {
+            var parsedData = JSON.parse(data);
+            map.removeLayer(featureGroup);
+            featureGroup = L.geoJson(parsedData).addTo(map);
+            featureGroup.eachLayer(eachFeatureFunction);
+            });
+          });
+        } else if (currentSlide==1){
+          $(document).ready(function() {
+          $.ajax(dataset).done(function(data) {
+            var parsedData = JSON.parse(data);
+            map.removeLayer(featureGroup);
+            featureGroup = L.geoJson(parsedData,{
+              filter: myFilter1,
+              style:myStyle1
+            }).addTo(map);
+            featureGroup.eachLayer(eachFeatureFunction);
+          });
+          });
+        }else if (currentSlide==2){
+          $(document).ready(function() {
+          $.ajax(dataset).done(function(data) {
+            var parsedData = JSON.parse(data);
+            map.removeLayer(featureGroup);
+            featureGroup = L.geoJson(parsedData,{
+              filter: myFilter2,
+              style:myStyle2
+            }).addTo(map);
+            featureGroup.eachLayer(eachFeatureFunction);
+          });
+          });
+        }else if (currentSlide==3){
+          $(document).ready(function() {
+          $.ajax(dataset).done(function(data) {
+            var parsedData = JSON.parse(data);
+            map.removeLayer(featureGroup);
+            featureGroup = L.geoJson(parsedData,{
+              filter: myFilter3,
+              style:myStyle3
+            }).addTo(map);
+            featureGroup.eachLayer(eachFeatureFunction);
+          });
+          });
+        }else if (currentSlide==4){
+          $(document).ready(function() {
+          $.ajax(dataset).done(function(data) {
+            var parsedData = JSON.parse(data);
+            map.removeLayer(featureGroup);
+            featureGroup = L.geoJson(parsedData,{
+              filter: myFilter4,
+              style:myStyle4
+            }).addTo(map);
+            featureGroup.eachLayer(eachFeatureFunction);
+          });
+          });
+        }
+      };
+
+      $('#previousButton').click(function(e) {
+        previous()
+        console.log(currentSlide);
+      });
+    </script>
+
+  </body>
+</html>
